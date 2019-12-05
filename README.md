@@ -1,75 +1,32 @@
-Microservice Kubernetes Sample
-=====================
+# SNS-Project
 
-[Deutsche Anleitung zum Starten des Beispiels](WIE-LAUFEN.md)
+## Setting up Kubernetes cluster
 
-This sample is like the sample for my Microservices Book
- ([English](http://microservices-book.com/) /
- [German](http://microservices-buch.de/)) that you can find at
- https://github.com/ewolff/microservice .
+### Using Stacked control plane and etcd nodes
 
-However, this demo uses [Kubernetes](https://kubernetes.io/) as Docker
-environment. Kubernetes also support service discovery and load
-balancing. An Apache httpd as a reverse proxy routes the calls to the
-services.
+join control plane and worker nodes to the cluster
 
-This project creates a complete micro service demo system in Docker
-containers. The services are implemented in Java using Spring and
-Spring Cloud.
+`kubeadm join 192.168.0.200:6443 --token 9vr73a.a8uxyaju799qwdjv --discovery-token-ca-cert-hash sha256:7c2e69131a36ae2a042a339b33381c6d0d43887e2de83720eff5359e26aec866 --control-plane --certificate-key f8902e114ef118304e561c3ecd4d0b543adc226b7a07f675f56564185ffe0c07`
 
+Apply the CNI plugin of your choice: Follow these instructions to install the CNI provider. Make sure the configuration corresponds to the Pod CIDR specified in the kubeadm configuration file if applicable.
 
+`kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"`
 
-It uses three microservices:
-- `Order` to process orders.
-- `Customer` to handle customer data.
-- `Catalog` to handle the items in the catalog.
+## Deployment
 
-How to run
----------
+### Using Pre-Built Container Images
 
-See [How to run](HOW-TO-RUN.md).
+This option offers you pre-built public container images that are easy to deploy
+by deploying the [release manifest](./release) directly to an existing cluster.
 
+**Prerequisite**: a running Kubernetes cluster (either local or on cloud).
 
-Apache HTTP Load Balancer
-------------------------
+1. Clone this repository, and go to the repository directory
+1. Run `kubectl apply -f ./release/kubernetes-manifests.yaml` to deploy the app.
+1. Run `kubectl get pods` to see pods are in a Ready state.
+1. Find the IP address of your application, then visit the application on your
+   browser to confirm installation.
 
-Apache HTTP is used to provide the web page of the demo at
-port 8080. It also forwards HTTP requests to the microservices. This
-is not really necessary as each service has its own port on the
-Minikube host but it provides a single point of entry for the whole system.
-Apache HTTP is configured as a reverse proxy for this.
-Load balancing is left to Kubernetes.
-
-To configure this Apache HTTP needs to get all registered services from
-Kubernetes. It just uses DNS for that.
-
-Please refer to the subdirectory [microservice-kubernetes-demo/apache](microservice-kubernetes-demo/apache/) to see how this works.
-
-
-Remarks on the Code
--------------------
-
-The microservices are:
-
-- [microservice-kubernetes-demo-catalog](microservice-kubernetes-demo/microservice-kubernetes-demo-catalog) is the application to take care of items.
-- [microservice-kubernetes-demo-customer](microservice-kubernetes-demo/microservice-kubernetes-demo-customer) is responsible for customers.
-- [microservice-kubernetes-demo-order](microservice-kubernetes-demo/microservice-kubernetes-demo-order) does order processing. It uses
-  microservice-kubernetes-demo-catalog and microservice-kubernetes-demo-customer.
-
-The microservices use REST to communicate to each other.
-See e.g. [CatalogClient](microservice-kubernetes-demo/microservice-kubernetes-demo-order/src/main/java/com/ewolff/microservice/order/clients/CatalogClient.java) .
-The hostname is configurable to allow tests with stubs.
-The default is `catalog` which works with Kubernetes.
-Other microservices are found using Kubernetes built-in DNS.
-Kubernetes does the load balancing on the IP level.
-
-The microservices have a Java main application in `src/test/java` to
-run them stand alone. `microservice-demo-order` uses a stub for the
-other services then. Also there are tests that use _consumer-driven
-contracts_. That is why it is ensured that the services provide the
-correct interface. These CDC tests are used in microservice-demo-order
-to verify the stubs. In `microservice-kubernetes-demo-customer` and
-`microserivce-kubernetes-demo-catalog` they are used to verify the implemented
-REST services.
-
-Note that the code has no dependencies on Kubernetes.
+   ```sh
+   kubectl get service/frontend-external
+   ```
